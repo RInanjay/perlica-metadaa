@@ -1,0 +1,16 @@
+{
+  "name": "perlica-netlify-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Perlica TikTok Metadata API",
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@netlify/functions": "^3.0.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^23.0.0"
+  }
+}
