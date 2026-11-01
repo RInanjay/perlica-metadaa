@@ -84,7 +84,6 @@ function getNumber(value) {
   }
 
   const number = Number(value);
-
   return Number.isFinite(number) ? number : null;
 }
 
@@ -257,157 +256,138 @@ function getLandingPage() {
   const html = `<!doctype html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101827">
-  <title>Perlica TikTok Analytics API</title>
-  <style>
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      padding: 28px 16px;
-      min-height: 100vh;
-      background: #0b1220;
-      color: #e5edf8;
-      font-family: system-ui, -apple-system, sans-serif;
-      display: grid;
-      place-items: center;
-    }
-
-    main {
-      width: 100%;
-      max-width: 680px;
-      padding: 28px;
-      border: 1px solid #263449;
-      border-radius: 20px;
-      background: #111c2d;
-      box-shadow: 0 20px 60px #0005;
-    }
-
-    .mark {
-      display: inline-grid;
-      place-items: center;
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      background: #203b50;
-      color: #6ee7d8;
-      font-size: 25px;
-      font-weight: 800;
-    }
-
-    h1 {
-      margin: 18px 0 8px;
-      font-size: clamp(25px, 6vw, 36px);
-    }
-
-    p {
-      color: #aab9cc;
-      line-height: 1.65;
-    }
-
-    .status {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin: 14px 0;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #12382f;
-      color: #86efac;
-      font-size: 14px;
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #4ade80;
-    }
-
-    section {
-      margin-top: 22px;
-      padding: 18px;
-      border: 1px solid #29384d;
-      border-radius: 14px;
-      background: #0c1626;
-    }
-
-    h2 {
-      margin: 0 0 12px;
-      font-size: 16px;
-    }
-
-    code, pre {
-      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    }
-
-    code {
-      color: #8be9df;
-      overflow-wrap: anywhere;
-    }
-
-    pre {
-      margin: 10px 0 0;
-      padding: 14px;
-      overflow-x: auto;
-      border-radius: 10px;
-      background: #070d17;
-      color: #cbd5e1;
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
-    footer {
-      margin-top: 22px;
-      color: #718198;
-      font-size: 12px;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1220">
+<title>Perlica API Tester</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:24px 14px;min-height:100vh;background:#0b1220;color:#e5edf8;font-family:system-ui,-apple-system,sans-serif}
+main{width:100%;max-width:760px;margin:0 auto}
+header{padding:10px 2px 22px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;background:#18384a;color:#70e6d7;font-size:25px;font-weight:900}
+h1{margin:0;font-size:25px}
+.sub{margin:5px 0 0;color:#91a4ba;font-size:13px}
+.status{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:7px 11px;border:1px solid #20513f;border-radius:30px;background:#102d26;color:#86efac;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:#4ade80}
+.card{margin-top:14px;padding:19px;border:1px solid #26364b;border-radius:17px;background:#111c2d}
+h2{margin:0 0 16px;font-size:17px}
+label{display:block;margin:14px 0 7px;color:#b8c6d8;font-size:13px}
+input{width:100%;padding:13px 14px;border:1px solid #35465d;border-radius:10px;outline:none;background:#091321;color:#edf5ff;font:inherit;font-size:14px}
+input:focus{border-color:#51cbbb}
+button{width:100%;margin-top:16px;padding:13px;border:0;border-radius:10px;background:#26c9b8;color:#06211f;font-size:15px;font-weight:800;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}
+.hint{margin:8px 0 0;color:#8294aa;font-size:12px;line-height:1.5}
+.method{display:inline-block;margin-right:8px;padding:4px 8px;border-radius:6px;background:#123b31;color:#86efac;font-size:11px;font-weight:800}
+.path{color:#9be9df;font-family:ui-monospace,monospace;font-size:13px}
+pre{min-height:90px;max-height:560px;overflow:auto;margin:0;padding:15px;border:1px solid #25364b;border-radius:11px;background:#07101c;color:#cbd8e8;font:12px/1.6 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.result-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.result-head h2{margin:0}
+.http{color:#91a4ba;font-size:12px}
+.error{color:#fca5a5}
+footer{padding:22px 4px;color:#718198;text-align:center;font-size:12px}
+</style>
 </head>
 <body>
-  <main>
-    <div class="mark">P</div>
+<main>
+<header>
+<div class="brand">
+<div class="logo">P</div>
+<div>
+<h1>Perlica API Tester</h1>
+<p class="sub">TikTok Analytics · Metadata Analyzer</p>
+</div>
+</div>
+<div class="status"><span class="dot"></span> API endpoint reachable</div>
+</header>
 
-    <h1>Perlica TikTok Analytics</h1>
+<section class="card">
+<h2>Request</h2>
+<div><span class="method">POST</span><span class="path">/api/analyze</span></div>
 
-    <div class="status">
-      <span class="dot"></span>
-      API Function is online
-    </div>
+<label for="apiKey">API Key</label>
+<input id="apiKey" type="password" placeholder="Masukkan API key Netlify" autocomplete="off">
+<p class="hint">Key hanya digunakan untuk request ini dan tidak disimpan oleh halaman.</p>
 
-    <p>
-      Endpoint Netlify berhasil dijangkau.
-      Gunakan metode <b>POST</b> untuk menganalisis
-      video TikTok. Halaman GET ini hanya untuk
-      mengecek status layanan.
-    </p>
+<label for="videoUrl">TikTok URL</label>
+<input id="videoUrl" type="url" placeholder="https://www.tiktok.com/@username/video/..." autocomplete="url">
 
-    <section>
-      <h2>Endpoint</h2>
-      <code>POST /api/analyze</code>
+<button id="sendBtn" type="button">Analyze Video</button>
+<p class="hint">Gunakan API key yang sama dengan variable API_KEY di Netlify.</p>
+</section>
 
-      <pre>Content-Type: application/json
-x-api-key: YOUR_API_KEY
+<section class="card">
+<div class="result-head">
+<h2>Response</h2>
+<span id="httpStatus" class="http">Belum ada request</span>
+</div>
+<pre id="result">Hasil JSON akan muncul di sini setelah tombol Analyze Video ditekan.</pre>
+</section>
 
-{
-  "url": "https://www.tiktok.com/@username/video/123456789"
-}</pre>
-    </section>
+<footer>Perlica API · TikTok metadata service</footer>
+</main>
 
-    <section>
-      <h2>Response</h2>
-      <p>
-        Jika request valid, API mengembalikan data video,
-        kreator, statistik, musik, dan metadata kualitas video.
-      </p>
-    </section>
+<script>
+const button = document.getElementById("sendBtn");
+const keyInput = document.getElementById("apiKey");
+const urlInput = document.getElementById("videoUrl");
+const resultBox = document.getElementById("result");
+const statusBox = document.getElementById("httpStatus");
 
-    <footer>
-      Perlica API · TikTok metadata service
-    </footer>
-  </main>
+button.addEventListener("click", async () => {
+  const apiKey = keyInput.value.trim();
+  const url = urlInput.value.trim();
+
+  if (!apiKey || !url) {
+    resultBox.textContent = JSON.stringify({
+      status: false,
+      message: "API Key dan URL TikTok wajib diisi."
+    }, null, 2);
+    statusBox.textContent = "Input belum lengkap";
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Analyzing...";
+  resultBox.textContent = "Menghubungi Perlica API, mohon tunggu...";
+  statusBox.textContent = "Request berjalan";
+
+  try {
+    const response = await fetch("/api/analyze", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey
+      },
+      body: JSON.stringify({ url })
+    });
+
+    const raw = await response.text();
+    let data;
+
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = { response: raw };
+    }
+
+    resultBox.textContent = JSON.stringify(data, null, 2);
+    statusBox.textContent = "HTTP " + response.status;
+    statusBox.className = response.ok ? "http" : "http error";
+  } catch (error) {
+    resultBox.textContent = JSON.stringify({
+      status: false,
+      message: error.message || "Tidak dapat menghubungi API."
+    }, null, 2);
+    statusBox.textContent = "Network error";
+    statusBox.className = "http error";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Analyze Video";
+  }
+});
+</script>
 </body>
 </html>`;
 
@@ -467,10 +447,8 @@ export default async (request) => {
     }
 
     const data = await getTikTokData(videoUrl);
-
     const author = data.author || {};
     const music = data.music_info || {};
-
     const mediaUrl = data.hdplay || data.play || null;
 
     let metadata = null;
@@ -480,18 +458,14 @@ export default async (request) => {
       try {
         metadata = await getVideoMetadata(mediaUrl);
       } catch (error) {
-        metadataError = error.message ||
-          "FFprobe gagal membaca video.";
-
+        metadataError = error.message || "FFprobe gagal membaca video.";
         console.error("[FFPROBE ERROR]", metadataError);
       }
     } else {
       metadataError = "URL video tidak diberikan oleh TikWM.";
     }
 
-    const fallbackSize = getNumber(
-      data.hd_size || data.size
-    );
+    const fallbackSize = getNumber(data.hd_size || data.size);
 
     return json({
       status: true,
