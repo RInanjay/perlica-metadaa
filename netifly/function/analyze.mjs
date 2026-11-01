@@ -7,8 +7,7 @@ import ffprobeStatic from "ffprobe-static";
 const execFileAsync = promisify(execFile);
 
 const TIKWM_API = "https://www.tikwm.com/api/";
-const FFP
-ROBE_PATH = ffprobeStatic.path;
+const FFPROBE_PATH = ffprobeStatic.path;
 
 const ALLOWED_MEDIA_HOSTS = [
   "tikwm.com",
@@ -44,9 +43,7 @@ function checkApiKey(request) {
 
   if (a.length !== b.length) return "INVALID";
 
-  return crypto.timingSafeEqual(a, b)
-    ? "OK"
-    : "INVALID";
+  return crypto.timingSafeEqual(a, b) ? "OK" : "INVALID";
 }
 
 function isTikTokUrl(value) {
@@ -204,8 +201,7 @@ async function getVideoMetadata(mediaUrl) {
   ];
 
   const result = await execFileAsync(
-    FFP
-ROBE_PATH,
+    FFPROBE_PATH,
     args,
     {
       timeout: 25000,
@@ -257,11 +253,182 @@ ROBE_PATH,
   };
 }
 
+function getLandingPage() {
+  const html = `<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Perlica TikTok Analytics API</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 28px 16px;
+      min-height: 100vh;
+      background: #0b1220;
+      color: #e5edf8;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: grid;
+      place-items: center;
+    }
+
+    main {
+      width: 100%;
+      max-width: 680px;
+      padding: 28px;
+      border: 1px solid #263449;
+      border-radius: 20px;
+      background: #111c2d;
+      box-shadow: 0 20px 60px #0005;
+    }
+
+    .mark {
+      display: inline-grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: #203b50;
+      color: #6ee7d8;
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    h1 {
+      margin: 18px 0 8px;
+      font-size: clamp(25px, 6vw, 36px);
+    }
+
+    p {
+      color: #aab9cc;
+      line-height: 1.65;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 14px 0;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #12382f;
+      color: #86efac;
+      font-size: 14px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+    }
+
+    section {
+      margin-top: 22px;
+      padding: 18px;
+      border: 1px solid #29384d;
+      border-radius: 14px;
+      background: #0c1626;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+    }
+
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+
+    code {
+      color: #8be9df;
+      overflow-wrap: anywhere;
+    }
+
+    pre {
+      margin: 10px 0 0;
+      padding: 14px;
+      overflow-x: auto;
+      border-radius: 10px;
+      background: #070d17;
+      color: #cbd5e1;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    footer {
+      margin-top: 22px;
+      color: #718198;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="mark">P</div>
+
+    <h1>Perlica TikTok Analytics</h1>
+
+    <div class="status">
+      <span class="dot"></span>
+      API Function is online
+    </div>
+
+    <p>
+      Endpoint Netlify berhasil dijangkau.
+      Gunakan metode <b>POST</b> untuk menganalisis
+      video TikTok. Halaman GET ini hanya untuk
+      mengecek status layanan.
+    </p>
+
+    <section>
+      <h2>Endpoint</h2>
+      <code>POST /api/analyze</code>
+
+      <pre>Content-Type: application/json
+x-api-key: YOUR_API_KEY
+
+{
+  "url": "https://www.tiktok.com/@username/video/123456789"
+}</pre>
+    </section>
+
+    <section>
+      <h2>Response</h2>
+      <p>
+        Jika request valid, API mengembalikan data video,
+        kreator, statistik, musik, dan metadata kualitas video.
+      </p>
+    </section>
+
+    <footer>
+      Perlica API · TikTok metadata service
+    </footer>
+  </main>
+</body>
+</html>`;
+
+  return new Response(html, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store"
+    }
+  });
+}
+
 export default async (request) => {
+  if (request.method === "GET") {
+    return getLandingPage();
+  }
+
   if (request.method !== "POST") {
     return json({
       status: false,
-      message: "Method not allowed. Use POST."
+      message: "Method not allowed. Use GET or POST."
     }, 405);
   }
 
@@ -313,7 +480,9 @@ export default async (request) => {
       try {
         metadata = await getVideoMetadata(mediaUrl);
       } catch (error) {
-        metadataError = error.message || "FFprobe gagal membaca video.";
+        metadataError = error.message ||
+          "FFprobe gagal membaca video.";
+
         console.error("[FFPROBE ERROR]", metadataError);
       }
     } else {
