@@ -4,6 +4,8 @@
 
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["ffprobe-static"]
+  included_files = ["node_modules/ffprobe-static/**"]
 
 [[redirects]]
   from = "/api/analyze"
