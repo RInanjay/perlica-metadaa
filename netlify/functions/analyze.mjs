@@ -1,6 +1,6 @@
-import { timingSafeEqual } from "node:crypto";
+const crypto = require("node:crypto");
 
-const API_URL = "https://www.tikwm.com/api/";
+const TIKWM_API = "https://www.tikwm.com/api/";
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data, null, 2), {
@@ -12,36 +12,40 @@ function json(data, status = 200) {
   });
 }
 
-function checkApiKey(request) {
-  const secret = process.env.API_KEY;
+function safeEqual(a, b) {
+  if (!a || !b) return false;
 
-  if (!secret) return false;
+  const first = Buffer.from(a);
+  const second = Buffer.from(b);
 
-  const supplied = request.headers.get("x-api-key") || "";
+  if (first.length !== second.length) return false;
 
-  const a = Buffer.from(secret);
-  const b = Buffer.from(supplied);
-
-  if (a.length !== b.length) return false;
-
-  return timingSafeEqual(a, b);
+  return crypto.timingSafeEqual(first, second);
 }
 
-function isTikTokUrl(value) {
+function validTikTokUrl(value) {
   try {
     const url = new URL(value);
 
-    const allowedHosts = [
+    return [
       "tiktok.com",
       "www.tiktok.com",
+      "m.tiktok.com",
       "vm.tiktok.com",
       "vt.tiktok.com"
-    ];
-
-    return allowedHosts.includes(url.hostname.toLowerCase());
+    ].includes(url.hostname.toLowerCase());
   } catch {
     return false;
   }
+}
+
+function getNumber(value) {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 function formatDate(timestamp) {
@@ -49,15 +53,13 @@ function formatDate(timestamp) {
 
   const date = new Date(Number(timestamp) * 1000);
 
-  if (Number.isNaN(date.getTime())) return null;
-
-  return date.toISOString();
+  return Number.isNaN(date.getTime())
+    ? null
+    : date.toISOString();
 }
 
 function formatDuration(seconds) {
-  if (seconds === undefined || seconds === null) {
-    return null;
-  }
+  if (seconds === null || seconds === undefined) return null;
 
   const total = Number(seconds);
 
@@ -69,23 +71,103 @@ function formatDuration(seconds) {
   return `${minutes}:${String(remaining).padStart(2, "0")}`;
 }
 
-function getNumber(value) {
-  if (value === undefined || value === null) return null;
+async function getTikTokData(url) {
+  const form = new URLSearchParams();
 
-  const number = Number(value);
+  form.append("url", url);
+  form.append("hd", "1");
 
-  return Number.isFinite(number) ? number : null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+
+  try {
+    const response = await fetch(TIKWM_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0"
+      },
+      body: form.toString(),
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new Error(`TikWM HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (Number(result.code) !== 0 || !result.data) {
+      throw new Error(
+        result.msg || "Gagal mengambil data TikTok dari TikWM."
+      );
+    }
+
+    return result.data;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function getVideoMetadata(mediaUrl) {
+  const serviceUrl = process.env.METADATA_API_URL;
+  const serviceKey = process.env.METADATA_API_KEY;
+
+  if (!serviceUrl || !serviceKey) {
+    throw new Error("Metadata service belum dikonfigurasi.");
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 35000);
+
+  try {
+    const response = await fetch(
+      `${serviceUrl.replace(/\/+$/, "")}/analyze`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": serviceKey
+        },
+        body: JSON.stringify({ mediaUrl }),
+        signal: controller.signal
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.status) {
+      throw new Error(
+        result.message || "Gagal membaca metadata video."
+      );
+    }
+
+    return result.metadata;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export default async (request) => {
   if (request.method !== "POST") {
     return json({
       status: false,
-      message: "Method not allowed. Use POST."
+      message: "Gunakan metode POST."
     }, 405);
   }
 
-  if (!checkApiKey(request)) {
+  const apiKey = process.env.API_KEY;
+  const suppliedKey = request.headers.get("x-api-key");
+
+  if (!apiKey) {
+    return json({
+      status: false,
+      message: "API_KEY belum dikonfigurasi di Netlify."
+    }, 500);
+  }
+
+  if (!safeEqual(apiKey, suppliedKey)) {
     return json({
       status: false,
       message: "Unauthorized. API key tidak valid."
@@ -103,61 +185,36 @@ export default async (request) => {
       }, 400);
     }
 
-    if (!isTikTokUrl(videoUrl)) {
+    if (!validTikTokUrl(videoUrl)) {
       return json({
         status: false,
         message: "URL TikTok tidak valid."
       }, 400);
     }
 
-    const form = new URLSearchParams();
-    form.append("url", videoUrl);
-    form.append("hd", "1");
+    const data = await getTikTokData(videoUrl);
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25000);
-
-    let response;
-
-    try {
-      response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Accept": "application/json",
-          "User-Agent": "Mozilla/5.0"
-        },
-        body: form.toString(),
-        signal: controller.signal
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-
-    if (!response.ok) {
-      return json({
-        status: false,
-        message: "TikWM sedang tidak merespons.",
-        httpStatus: response.status
-      }, 502);
-    }
-
-    const result = await response.json();
-
-    if (result.code !== 0 || !result.data) {
-      return json({
-        status: false,
-        message: result.msg || "Gagal mengambil data TikTok."
-      }, 502);
-    }
-
-    const data = result.data;
     const author = data.author || {};
     const music = data.music_info || {};
 
-    const videoMeta = data.video_meta || data.videoMeta || {};
+    const mediaUrl = data.hdplay || data.play || null;
 
-    const output = {
+    let metadata = null;
+    let metadataError = null;
+
+    if (mediaUrl) {
+      try {
+        metadata = await getVideoMetadata(mediaUrl);
+      } catch (error) {
+        metadataError = error.name === "AbortError"
+          ? "Metadata service timeout."
+          : error.message;
+      }
+    } else {
+      metadataError = "URL video tidak disediakan TikWM.";
+    }
+
+    return json({
       status: true,
       creator: "Perlica",
 
@@ -195,33 +252,29 @@ export default async (request) => {
       },
 
       quality: {
-        width: getNumber(videoMeta.width || data.width),
-        height: getNumber(videoMeta.height || data.height),
-        fps: getNumber(videoMeta.fps || data.fps),
-        bitrate: getNumber(videoMeta.bitrate || data.bitrate),
-        codec: videoMeta.codec || data.codec || null,
-        size: getNumber(data.size),
+        width: metadata?.width ?? null,
+        height: metadata?.height ?? null,
+        resolution: metadata?.resolution ?? null,
+        fps: metadata?.fps ?? null,
+        codec: metadata?.codec ?? null,
+        format: metadata?.format ?? null,
+        bitrate: metadata?.bitrate ?? null,
+        size: metadata?.size ?? getNumber(data.size),
         hdSize: getNumber(data.hd_size),
         playUrlAvailable: Boolean(data.play),
-        hdUrlAvailable: Boolean(data.hdplay)
+        hdUrlAvailable: Boolean(data.hdplay),
+        metadataSource: metadata ? "FFprobe" : null,
+        metadataError
       }
-    };
-
-    return json(output);
-
+    });
   } catch (error) {
-    console.error("ANALYZE ERROR:", error);
-
-    if (error.name === "AbortError") {
-      return json({
-        status: false,
-        message: "Permintaan ke TikWM timeout."
-      }, 504);
-    }
+    console.error("[PERLICA ANALYZE]", error);
 
     return json({
       status: false,
-      message: "Terjadi kesalahan saat menganalisis video."
+      message: error.name === "AbortError"
+        ? "Permintaan timeout."
+        : error.message || "Gagal menganalisis video."
     }, 500);
   }
 };
